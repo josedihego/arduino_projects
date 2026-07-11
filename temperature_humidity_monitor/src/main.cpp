@@ -1,3 +1,35 @@
+/**
+ * @author José Dihego da Silva Oliveira josedihego.net
+ * @brief Local IoT Temperature Server for WeMos D1 R1 (ESP8266) & DHT11.
+ * * =========================================================================
+ * HARDWARE FLASHING OVERRIDE PROCEDURE
+ * =========================================================================
+ * Because the active Wi-Fi stack and local server tasks can lock the serial
+ * port, follow this manual sequence to flash new firmware to the board:
+ * * 1. DISCONNECT POWER AND SENSORS:
+ * Unplug the USB cable and completely remove the VCC/DATA wires of the
+ * DHT11 sensor from the board rails to prevent boot-up current drops.
+ * * 2. FORCE FLASH MODE:
+ * Connect a physical jumper wire from pin D8 (internal GPIO0) directly
+ * to a GND pin.
+ * * 3. REBOOT AND CONNECT:
+ * Plug the USB cable back into the computer. The board will power up
+ * in bootloader mode.
+ * * 4. UPLOAD FIRMWARE:
+ * Trigger the upload inside the IDE (PlatformIO or Arduino IDE).
+ * * 5. DISCONNECT THE BYPASS WIRE:
+ * The moment the terminal display changes to "Connecting........_____",
+ * immediately remove the jumper wire from pin D8.
+ * * 6. RECONNECT HARDWARE:
+ * Once the upload finishes successfully (100%), power cycle the board
+ * and plug the DHT11 sensor rails back into their working pin (GPIO2/D4).
+ * =========================================================================
+ * Services 
+ * ngrok http 192.168.5.109:80
+ * http://192.168.5.109
+ * http://192.168.5.109/data
+ */
+
 #include <Arduino.h>
 
 #include <ESP8266WiFi.h>
@@ -7,29 +39,30 @@
 
 #include "secrets.h"
 
-
 #define DHTPIN D0
 #define DHTTYPE DHT11
 DHT dht(DHTPIN, DHTTYPE);
 
 ESP8266WebServer server(80);
 
-void handleData()
+bool handleData()
 {
   float t = NAN, h = NAN;
 
-  for (int i = 0; i < 5 && (isnan(t) || isnan(h)); i++)
+  int i = 0;
+  while ((isnan(t) || isnan(h)) && (i < 5))
   {
     delay(2000);
     t = dht.readTemperature();
     h = dht.readHumidity();
+    i = i +1;
   }
 
   if (isnan(t) || isnan(h))
   {
     server.send(503, "application/json",
                 "{\"error\":\"Sensor read failed after 5 attempts\"}");
-    return;
+    return false;
   }
 
   String json = "{";
@@ -38,11 +71,12 @@ void handleData()
   json += "}";
 
   server.send(200, "application/json", json);
+  return true;
 }
 void handleRoot()
 {
   server.send(200, "text/plain",
-              "DHT11 server running. Use GET /data for readings.");
+              "Server running. Use GET /data for readings.");
 }
 
 void handleNotFound()
@@ -56,7 +90,7 @@ void setup()
   Serial.begin(9600);
   delay(2000);
 
-  Serial.println("\n=== DHT11 WiFi Server ===");
+  Serial.println("\n=== WiFi Server ===");
 
   dht.begin();
   delay(2000);
@@ -69,7 +103,7 @@ void setup()
   }
   else
   {
-    Serial.print("PRE-WIFI OK → t=");
+    Serial.print("WIFI OK t=");
     Serial.print(t);
     Serial.print(" h=");
     Serial.println(h);
@@ -84,7 +118,7 @@ void setup()
   }
   Serial.println("\nConnected!");
   Serial.print("IP address: ");
-  Serial.println(WiFi.localIP()); // <── paste this IP into Postman
+  Serial.println(WiFi.localIP());
 
   server.on("/", HTTP_GET, handleRoot);
   server.on("/data", HTTP_GET, handleData);
@@ -97,5 +131,5 @@ void setup()
 
 void loop()
 {
-  server.handleClient(); // process incoming HTTP requests
+  server.handleClient();
 }
