@@ -50,18 +50,18 @@ bool handleData()
   float t = NAN, h = NAN;
 
   int i = 0;
-  // Tenta ler o sensor até 5 vezes enquanto os valores ainda forem inválidos.
+  // Attempts to read the sensor up to five times while the values are still invalid.
   while ((isnan(t) || isnan(h)) && (i < 5))
   {
-    // Espera um momento para o sensor estabilizar antes de nova leitura.
+    // Waits briefly for the sensor to stabilise before taking another reading.
     delay(2000);
-    // Lê temperatura e umidade diretamente do sensor DHT11.
+    // Reads the temperature and humidity directly from the DHT11 sensor.
     t = dht.readTemperature();
     h = dht.readHumidity();
     i = i + 1;
   }
 
-  // Se após as tentativas ainda não houver dados válidos, responde com erro 503.
+  // If valid data is still unavailable after the attempts, it responds with a 503 error.
   if (isnan(t) || isnan(h))
   {
     server.send(503, "application/json",
@@ -69,13 +69,13 @@ bool handleData()
     return false;
   }
 
-  // Monta o corpo da resposta em formato JSON com valores formatados.
+  // Builds the response body in JSON format with formatted values.
   String json = "{";
   json += "\"temperature_c\":" + String(t, 1) + ",";
   json += "\"humidity_pct\":" + String(h, 1);
   json += "}";
 
-  // Envia a resposta JSON para o cliente que solicitou os dados.
+  // Sends the JSON response to the client that requested the data.
   server.send(200, "application/json", json);
   return true;
 }
@@ -93,13 +93,13 @@ void handleNotFound()
 
 void setup()
 {
-  // Inicia a comunicação serial para exibir mensagens de diagnóstico.
+  // Initialises serial communication for diagnostic messages.
   Serial.begin(9600);
   delay(2000);
 
   Serial.println("\n=== WiFi Server ===");
 
-  // Inicializa o sensor DHT11 após o sistema estar pronto.
+  // Initialises the DHT11 sensor once the system is ready.
   dht.begin();
   delay(2000);
 
@@ -117,25 +117,25 @@ void setup()
     Serial.println(h);
   }
 
-  // Conecta o ESP8266 à rede Wi-Fi definida nas credenciais secretas.
+  // Connects the ESP8266 to the Wi-Fi network defined in the secret credentials.
   WiFi.begin(SSID, PASSWORD);
   Serial.print("Connecting");
-  // Aguarda até que a conexão Wi-Fi fique ativa antes de prosseguir.
+  // Waits until the Wi-Fi connection is active before continuing.
   while (WiFi.status() != WL_CONNECTED)
   {
     delay(500);
     Serial.print(".");
   }
   Serial.println("\nConnected!");
-  Serial.print("IP address: ");create comments in portuguese BR for each complex (not obvious) line of code in this file.
+  Serial.print("IP address: ");
   Serial.println(WiFi.localIP());
 
-  // Registra as rotas HTTP que o servidor vai responder.
+  // Registers the HTTP routes that the server will respond to.
   server.on("/", HTTP_GET, handleRoot);
   server.on("/data", HTTP_GET, handleData);
   server.onNotFound(handleNotFound);
 
-  // Inicia o servidor web na porta 80 do ESP8266.
+  // Starts the web server on port 80 of the ESP8266.
   server.begin();
   Serial.println("HTTP server started on port 80");
   delay(2000);
@@ -143,6 +143,6 @@ void setup()
 
 void loop()
 {
-  // Processa requisições HTTP entrantes enquanto o servidor estiver ativo.
+  // Handles incoming HTTP requests while the server is active.
   server.handleClient();
 }

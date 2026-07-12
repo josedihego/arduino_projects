@@ -1,3 +1,8 @@
+/**
+ * @author José Dihego da Silva Oliveira josedihego.net
+ * @brief RFID access control sketch for reading cards and granting access.
+ *
+*/ 
 #include <Arduino.h>
 #include <SPI.h>
 #include <MFRC522.h>
@@ -12,17 +17,17 @@ byte authorisedUID[4] = {0x3C, 0xEA, 0xF5, 0x04};
 
 void setup()
 {
-    // Inicia a comunicação serial para exibir mensagens de depuração no monitor.
+    // Initialises serial communication to display debugging messages in the monitor.
     Serial.begin(115200);
     delay(1000);
 
-    // Configura o pino do LED como saída e garante que ele comece desligado.
+    // Configures the LED pin as an output and ensures it starts off.
     pinMode(FLASH_LED_PIN, OUTPUT);
     digitalWrite(FLASH_LED_PIN, LOW);
 
-    // Inicializa a comunicação SPI com os pinos usados pelo módulo RFID.
+    // Initialises SPI communication with the pins used by the RFID module.
     SPI.begin(14, 12, 13, 2);
-    // Inicializa o módulo MFRC522 para começar a leitura de cartões.
+    // Initialises the MFRC522 module so it can begin reading cards.
     mfrc522.PCD_Init();
 
     Serial.println("\n=== RFID Lock Test ===");
@@ -31,24 +36,24 @@ void setup()
 
 void loop()
 {
-    // Verifica se há um novo cartão presente e se conseguiu ler seu identificador.
+    // Checks whether a new card is present and whether its identifier could be read.
     if (!mfrc522.PICC_IsNewCardPresent() || !mfrc522.PICC_ReadCardSerial())
     {
         return;
     }
 
     Serial.print("Card Scanned! UID:");
-    // Assume que o cartão é o mestre até encontrar algum byte diferente do UID autorizado.
+    // Assumes the card is the master card until a different byte is found compared with the authorised UID.
     bool isMasterCard = true;
 
-    // Percorre todos os bytes do UID lido para compará-los com o UID autorizado.
+    // Iterates through all bytes of the read UID and compares them with the authorised UID.
     for (byte i = 0; i < mfrc522.uid.size; i++)
     {
-        // Adiciona um zero à esquerda para manter a formatação hexadecimal legível.
+        // Adds a leading zero to keep the hexadecimal formatting readable.
         Serial.print(mfrc522.uid.uidByte[i] < 0x10 ? " 0" : " ");
         Serial.print(mfrc522.uid.uidByte[i], HEX);
 
-        // Marca o cartão como não autorizado se qualquer byte for diferente.
+        // Marks the card as unauthorised if any byte differs.
         if (mfrc522.uid.uidByte[i] != authorisedUID[i])
         {
             isMasterCard = false;
@@ -56,12 +61,12 @@ void loop()
     }
     Serial.println();
 
-    // Se todos os bytes corresponderem, libera o acesso e acende o LED.
+    // If all bytes match, access is granted and the LED is switched on.
     if (isMasterCard)
     {
         Serial.println("Access Granted! Opening lock...");
 
-        // Faz o LED piscar algumas vezes para indicar que o acesso foi concedido.
+        // Makes the LED flash a few times to indicate that access has been granted.
         for (int i = 0; i < 3; i = i + 1)
         {
             digitalWrite(FLASH_LED_PIN, HIGH);
@@ -74,7 +79,7 @@ void loop()
     {
         Serial.println("Access Denied.");
     }
-    // Para a comunicação com o cartão após a leitura para liberar o módulo.
+    // Stops communication with the card after reading to free the module.
     mfrc522.PICC_HaltA();
     delay(1000);
 }
