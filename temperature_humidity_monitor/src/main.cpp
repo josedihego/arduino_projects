@@ -50,14 +50,18 @@ bool handleData()
   float t = NAN, h = NAN;
 
   int i = 0;
+  // Tenta ler o sensor até 5 vezes enquanto os valores ainda forem inválidos.
   while ((isnan(t) || isnan(h)) && (i < 5))
   {
+    // Espera um momento para o sensor estabilizar antes de nova leitura.
     delay(2000);
+    // Lê temperatura e umidade diretamente do sensor DHT11.
     t = dht.readTemperature();
     h = dht.readHumidity();
-    i = i +1;
+    i = i + 1;
   }
 
+  // Se após as tentativas ainda não houver dados válidos, responde com erro 503.
   if (isnan(t) || isnan(h))
   {
     server.send(503, "application/json",
@@ -65,11 +69,13 @@ bool handleData()
     return false;
   }
 
+  // Monta o corpo da resposta em formato JSON com valores formatados.
   String json = "{";
   json += "\"temperature_c\":" + String(t, 1) + ",";
   json += "\"humidity_pct\":" + String(h, 1);
   json += "}";
 
+  // Envia a resposta JSON para o cliente que solicitou os dados.
   server.send(200, "application/json", json);
   return true;
 }
@@ -87,11 +93,13 @@ void handleNotFound()
 
 void setup()
 {
+  // Inicia a comunicação serial para exibir mensagens de diagnóstico.
   Serial.begin(9600);
   delay(2000);
 
   Serial.println("\n=== WiFi Server ===");
 
+  // Inicializa o sensor DHT11 após o sistema estar pronto.
   dht.begin();
   delay(2000);
 
@@ -109,21 +117,25 @@ void setup()
     Serial.println(h);
   }
 
+  // Conecta o ESP8266 à rede Wi-Fi definida nas credenciais secretas.
   WiFi.begin(SSID, PASSWORD);
   Serial.print("Connecting");
+  // Aguarda até que a conexão Wi-Fi fique ativa antes de prosseguir.
   while (WiFi.status() != WL_CONNECTED)
   {
     delay(500);
     Serial.print(".");
   }
   Serial.println("\nConnected!");
-  Serial.print("IP address: ");
+  Serial.print("IP address: ");create comments in portuguese BR for each complex (not obvious) line of code in this file.
   Serial.println(WiFi.localIP());
 
+  // Registra as rotas HTTP que o servidor vai responder.
   server.on("/", HTTP_GET, handleRoot);
   server.on("/data", HTTP_GET, handleData);
   server.onNotFound(handleNotFound);
 
+  // Inicia o servidor web na porta 80 do ESP8266.
   server.begin();
   Serial.println("HTTP server started on port 80");
   delay(2000);
@@ -131,5 +143,6 @@ void setup()
 
 void loop()
 {
+  // Processa requisições HTTP entrantes enquanto o servidor estiver ativo.
   server.handleClient();
 }
