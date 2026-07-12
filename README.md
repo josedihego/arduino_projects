@@ -1,5 +1,5 @@
 # Arduino Project Collection
-##Author: José Dihego da Silva Oliveira - josedihego.net
+## Author: José Dihego da Silva Oliveira - josedihego.net
 
 This repository contains five Arduino/PlatformIO projects demonstrating sensor input, actuator output, IoT communication, and access control.
 
