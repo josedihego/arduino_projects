@@ -1,4 +1,5 @@
 /**
+ * @author José Dihego da Silva Oliveira - josedihego.net
  * @brief Light-dependent resistor sketch with smooth LED dimming.
  * Reads the LDR value from analog pin A0 and adjusts the LED brightness
  * on pin 9 using PWM.
