@@ -2,10 +2,8 @@
 #include <SPI.h>
 #include <MFRC522.h>
 
-// --- Pin Definitions ---
 #define RST_PIN 15
 #define SS_PIN 2
-#define BUZZER_PIN 16
 #define FLASH_LED_PIN 4
 
 MFRC522 mfrc522(SS_PIN, RST_PIN);
@@ -17,12 +15,8 @@ void setup()
     Serial.begin(115200);
     delay(1000);
 
-    // Set up the LED and Buzzer
     pinMode(FLASH_LED_PIN, OUTPUT);
-    pinMode(BUZZER_PIN, OUTPUT);
-
     digitalWrite(FLASH_LED_PIN, LOW);
-    digitalWrite(BUZZER_PIN, LOW);
 
     SPI.begin(14, 12, 13, 2);
     mfrc522.PCD_Init();
@@ -57,14 +51,12 @@ void loop()
     {
         Serial.println("Access Granted! Opening lock...");
 
-        for (int i = 0; i < 2; i++)
+        for (int i = 0; i < 3; i = i + 1)
         {
             digitalWrite(FLASH_LED_PIN, HIGH);
-            digitalWrite(BUZZER_PIN, HIGH);
             delay(150);
             digitalWrite(FLASH_LED_PIN, LOW);
-            digitalWrite(BUZZER_PIN, LOW);
-            delay(150);
+             delay(150);
         }
     }
     else
