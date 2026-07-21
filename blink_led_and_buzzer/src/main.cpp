@@ -25,7 +25,7 @@ int currentNote = 0;
 unsigned long previousNoteMillis = 0;
 int currentNoteDuration = 0;
 
-// NEW: Flag to track which melody is playing
+// Flag to track which melody is playing
 bool playWindowsMelody = true; 
 
 // --- Melody 1: Windows XP ---
@@ -34,7 +34,6 @@ int noteDurations1[] = { 150, 150, 150, 150, 300, 600 };
 const int melodyLength1 = 6;
 
 // --- Melody 2: Dial-up Modem (Approximation) ---
-// Alternating mid-tones followed by frantic high-pitched beeps
 int melody2[] = { 1200, 1500, 1200, 1500, 2400, 2800, 2400, 2800, 3200 };
 int noteDurations2[] = { 200, 200, 200, 200, 80, 80, 80, 80, 600 }; 
 const int melodyLength2 = 9;
@@ -88,12 +87,10 @@ void loop() {
 
         unsigned long gapTime = currentNoteDuration / 10;
         
-        // 1. Has the note finished playing? (Time to be silent)
         if (currentNoteDuration > 0 && (currentMillis - previousNoteMillis >= currentNoteDuration)) {
             digitalWrite(buzzerPin, HIGH); // Force the pin high to guarantee silence
         }
 
-        // 2. Has the gap finished? (Time for the next note)
         if (currentNoteDuration == 0 || (currentMillis - previousNoteMillis >= (currentNoteDuration + gapTime))) {
             
             if (currentNote < currentLen) {
@@ -104,17 +101,14 @@ void loop() {
                 previousNoteMillis = currentMillis;
                 currentNote++;
             } else {
-                // The melody array has finished
                 isPlayingMelody = false; 
                 currentNoteDuration = 0; 
                 
                 noTone(buzzerPin);
                 digitalWrite(buzzerPin, HIGH); // Used HIGH here to match your hardware
                 
-                // FLIP THE FLAG: If it was true, make it false. If false, make it true.
                 playWindowsMelody = !playWindowsMelody;
                 
-                // Reset the 5-second timer
                 previousMelodyMillis = currentMillis;
             }
         }
