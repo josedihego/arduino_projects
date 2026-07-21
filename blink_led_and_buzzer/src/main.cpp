@@ -1,6 +1,6 @@
 #include <Arduino.h>
 
-// --- Windows XP Startup Melody Frequencies (Hz) ---
+// --- Windows XP Startup Frequencies (Hz) ---
 #define NOTE_DS4 311
 #define NOTE_GS4 415
 #define NOTE_AS4 466
@@ -17,7 +17,7 @@ int currentLed = 0;
 
 // --- Melody Timing Variables ---
 unsigned long previousMelodyMillis = 0;
-const long melodyInterval = 5000; // 5 seconds pause *between* plays
+const long melodyInterval = 5000; 
 
 // --- Melody Sequencer Variables ---
 bool isPlayingMelody = false;
@@ -25,9 +25,20 @@ int currentNote = 0;
 unsigned long previousNoteMillis = 0;
 int currentNoteDuration = 0;
 
-int melody[] = { NOTE_DS4, NOTE_DS5, NOTE_AS4, NOTE_GS4, NOTE_DS5, NOTE_AS4 };
-int noteDurations[] = { 150, 150, 150, 150, 300, 600 }; 
-const int melodyLength = 6;
+// NEW: Flag to track which melody is playing
+bool playWindowsMelody = true; 
+
+// --- Melody 1: Windows XP ---
+int melody1[] = { NOTE_DS4, NOTE_DS5, NOTE_AS4, NOTE_GS4, NOTE_DS5, NOTE_AS4 };
+int noteDurations1[] = { 150, 150, 150, 150, 300, 600 }; 
+const int melodyLength1 = 6;
+
+// --- Melody 2: Dial-up Modem (Approximation) ---
+// Alternating mid-tones followed by frantic high-pitched beeps
+int melody2[] = { 1200, 1500, 1200, 1500, 2400, 2800, 2400, 2800, 3200 };
+int noteDurations2[] = { 200, 200, 200, 200, 80, 80, 80, 80, 600 }; 
+const int melodyLength2 = 9;
+
 
 void setup() {
     for (int i = 0; i < 3; i++) {
@@ -36,7 +47,7 @@ void setup() {
     }
     
     pinMode(buzzerPin, OUTPUT);
-    digitalWrite(buzzerPin, LOW); 
+    digitalWrite(buzzerPin, HIGH); // Default to HIGH (silent for Active-Low)
     
     // Trigger melody at boot
     isPlayingMelody = true;
@@ -57,8 +68,7 @@ void loop() {
 
         digitalWrite(ledPins[currentLed], HIGH);
         currentLed = (currentLed + 1) % 3;
-        digitalWrite(buzzerPin, HIGH); // Force the pin low to guarantee silence
-
+        digitalWrite(buzzerPin, HIGH); // Force the pin high to guarantee silence
     }
 
     // 2. --- Melody Trigger Logic ---
@@ -66,29 +76,30 @@ void loop() {
         isPlayingMelody = true;
         currentNote = 0;
         previousNoteMillis = currentMillis; 
-        digitalWrite(buzzerPin, HIGH); // Force the pin low to guarantee silence
-
+        digitalWrite(buzzerPin, HIGH); // Force the pin high to guarantee silence
     }
 
     // 3. --- Melody Sequencer Logic ---
     if (isPlayingMelody) {
-        // Calculate the silent gap (10% of the note's duration)
+        // Determine which arrays to read from based on the flag
+        int currentLen = playWindowsMelody ? melodyLength1 : melodyLength2;
+        int currentFreq = playWindowsMelody ? melody1[currentNote] : melody2[currentNote];
+        int currentDur = playWindowsMelody ? noteDurations1[currentNote] : noteDurations2[currentNote];
+
         unsigned long gapTime = currentNoteDuration / 10;
         
         // 1. Has the note finished playing? (Time to be silent)
         if (currentNoteDuration > 0 && (currentMillis - previousNoteMillis >= currentNoteDuration)) {
-            //noTone(buzzerPin); // Manually kill the sound
-            digitalWrite(buzzerPin, HIGH); // Force the pin low to guarantee silence
+            digitalWrite(buzzerPin, HIGH); // Force the pin high to guarantee silence
         }
 
         // 2. Has the gap finished? (Time for the next note)
         if (currentNoteDuration == 0 || (currentMillis - previousNoteMillis >= (currentNoteDuration + gapTime))) {
             
-            if (currentNote < melodyLength) {
-                currentNoteDuration = noteDurations[currentNote];
+            if (currentNote < currentLen) {
+                currentNoteDuration = currentDur;
                 
-                // Start the new note WITHOUT the duration parameter
-                tone(buzzerPin, melody[currentNote]); 
+                tone(buzzerPin, currentFreq); 
                 
                 previousNoteMillis = currentMillis;
                 currentNote++;
@@ -98,9 +109,12 @@ void loop() {
                 currentNoteDuration = 0; 
                 
                 noTone(buzzerPin);
-                digitalWrite(buzzerPin, LOW);
+                digitalWrite(buzzerPin, HIGH); // Used HIGH here to match your hardware
                 
-                // Reset the 5-second timer NOW so we get a true 5-second gap
+                // FLIP THE FLAG: If it was true, make it false. If false, make it true.
+                playWindowsMelody = !playWindowsMelody;
+                
+                // Reset the 5-second timer
                 previousMelodyMillis = currentMillis;
             }
         }
